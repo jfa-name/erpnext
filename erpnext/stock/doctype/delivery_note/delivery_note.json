@@ -1335,11 +1335,7 @@
  "idx": 146,
  "is_submittable": 1,
  "links": [],
-<<<<<<< HEAD
- "modified": "2022-09-16 17:46:17.701904",
-=======
  "modified": "2022-10-02 16:26:48.033940",
->>>>>>> New change
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Delivery Note",
