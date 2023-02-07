@@ -2047,11 +2047,7 @@
    "link_fieldname": "consolidated_invoice"
   }
  ],
-<<<<<<< HEAD
- "modified": "2022-10-02 16:24:03.736481",
-=======
  "modified": "2023-01-28 19:45:47.538163",
->>>>>>> 6a9660de65c4ef7d39debc72bee9b7419831f482
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",
