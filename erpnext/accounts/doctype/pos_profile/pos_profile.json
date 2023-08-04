@@ -400,9 +400,14 @@
    "group": "Opening & Closing",
    "link_doctype": "POS Closing Entry",
    "link_fieldname": "pos_profile"
+  },
+  {
+   "group": "Delivery Notes",
+   "link_doctype": "Delivery Note",
+   "link_fieldname": "pos_profile"
   }
  ],
- "modified": "2022-08-10 12:57:06.241439",
+ "modified": "2023-07-28 13:12:06.269392",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",
