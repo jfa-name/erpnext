@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_auto_repeat": 1,
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2022-01-25 10:29:57.771398",
