@@ -65,7 +65,6 @@
   },
   {
    "allow_on_submit": 1,
-   "default": ":Company",
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Cost Center",
