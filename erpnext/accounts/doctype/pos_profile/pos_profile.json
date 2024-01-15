@@ -34,6 +34,8 @@
   "customer_groups",
   "section_break_16",
   "print_format",
+  "print_format_dn",
+  "print_format_for_online_dn",
   "letter_head",
   "column_break0",
   "tc_name",
@@ -375,6 +377,18 @@
    "fieldname": "disable_rounded_total",
    "fieldtype": "Check",
    "label": "Disable Rounded Total"
+  },
+  {
+   "fieldname": "print_format_dn",
+   "fieldtype": "Link",
+   "label": "Print Format DN",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "print_format_for_online_dn",
+   "fieldtype": "Link",
+   "label": "print_format_for_online_dn",
+   "options": "Print Format"
   }
  ],
  "icon": "icon-cog",
@@ -407,7 +421,7 @@
    "link_fieldname": "pos_profile"
   }
  ],
- "modified": "2023-07-28 13:12:06.269392",
+ "modified": "2023-12-03 17:14:51.392291",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",
