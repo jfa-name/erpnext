@@ -11,23 +11,8 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		super.setup(doc);
 	}
 	company() {
+		super.company();
 		erpnext.accounts.dimensions.update_dimension(this.frm, this.frm.doctype);
-
-		let me = this;
-		if (this.frm.doc.company) {
-			frappe.call({
-				method:
-					"erpnext.accounts.party.get_party_account",
-				args: {
-					party_type: 'Customer',
-					party: this.frm.doc.customer,
-					company: this.frm.doc.company
-				},
-				callback: (response) => {
-					if (response) me.frm.set_value("debit_to", response.message);
-				},
-			});
-		}
 	}
 	onload() {
 		var me = this;
@@ -64,25 +49,6 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 
 		this.frm.toggle_reqd("due_date", !this.frm.doc.is_return);
 
-		if (this.frm.doc.repost_required && this.frm.doc.docstatus===1) {
-			this.frm.set_intro(__("Accounting entries for this invoice needs to be reposted. Please click on 'Repost' button to update."));
-			this.frm.add_custom_button(__('Repost Accounting Entries'),
-				() => {
-					this.frm.call({
-						doc: this.frm.doc,
-						method: 'repost_accounting_entries',
-						freeze: true,
-						freeze_message: __('Reposting...'),
-						callback: (r) => {
-							if (!r.exc) {
-								frappe.msgprint(__('Accounting Entries are reposted'));
-								me.frm.refresh();
-							}
-						}
-					});
-				}).removeClass('btn-default').addClass('btn-warning');
-		}
-
 		if (this.frm.doc.is_return) {
 			this.frm.return_print_format = "Sales Invoice Return";
 		}
@@ -91,8 +57,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 
 		if(doc.update_stock) this.show_stock_ledger();
 
-		if (doc.docstatus == 1 && doc.outstanding_amount!=0
-			&& !(cint(doc.is_return) && doc.return_against)) {
+		if (doc.docstatus == 1 && doc.outstanding_amount!=0) {
 			this.frm.add_custom_button(
 				__('Payment'),
 				() => this.make_payment_entry(),
@@ -216,7 +181,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 			if(cur_frm.meta._default_print_format) {
 				cur_frm.meta.default_print_format = cur_frm.meta._default_print_format;
 				cur_frm.meta._default_print_format = null;
-			} else if(in_list([cur_frm.pos_print_format, cur_frm.return_print_format], cur_frm.meta.default_print_format)) {
+			} else if([cur_frm.pos_print_format, cur_frm.return_print_format].includes(cur_frm.meta.default_print_format)) {
 				cur_frm.meta.default_print_format = null;
 				cur_frm.meta._default_print_format = null;
 			}
@@ -444,12 +409,16 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				frappe.msgprint(__("Please specify Company to proceed"));
 			} else {
 				var me = this;
+				const for_validate = me.frm.doc.is_return ? true : false;
 				return this.frm.call({
 					doc: me.frm.doc,
 					method: "set_missing_values",
-					callback: function(r) {
-						if(!r.exc) {
-							if(r.message && r.message.print_format) {
+					args: {
+						for_validate: for_validate,
+					},
+					callback: function (r) {
+						if (!r.exc) {
+							if (r.message && r.message.print_format) {
 								me.frm.pos_print_format = r.message.print_format;
 							}
 							me.frm.trigger("update_stock");
