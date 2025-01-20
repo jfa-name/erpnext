@@ -71,7 +71,7 @@ def validate_returned_items(doc):
 
 	valid_items = frappe._dict()
 
-	select_fields = "item_code, qty, stock_qty, rate, parenttype, conversion_factor"
+	select_fields = "item_code, qty, stock_qty, rate, parenttype, conversion_factor, name"
 	if doc.doctype != "Purchase Invoice":
 		select_fields += ",serial_no, batch_no"
 
@@ -103,16 +103,27 @@ def validate_returned_items(doc):
 
 	items_returned = False
 	for d in doc.get("items"):
+		key = d.item_code
+		raise_exception = False
+		if doc.doctype in ["Purchase Receipt", "Purchase Invoice", "Sales Invoice"]:
+			field = frappe.scrub(doc.doctype) + "_item"
+			if d.get(field):
+				key = (d.item_code, d.get(field))
+				raise_exception = True
+		elif doc.doctype == "Delivery Note":
+			key = (d.item_code, d.get("dn_detail"))
+
 		if d.item_code and (flt(d.qty) < 0 or flt(d.get("received_qty")) < 0):
-			if d.item_code not in valid_items:
-				frappe.throw(
+			if key not in valid_items:
+				frappe.msgprint(
 					_("Row # {0}: Returned Item {1} does not exist in {2} {3}").format(
 						d.idx, d.item_code, doc.doctype, doc.return_against
-					)
+					),
+					raise_exception=raise_exception,
 				)
 			else:
-				ref = valid_items.get(d.item_code, frappe._dict())
-				validate_quantity(doc, d, ref, valid_items, already_returned_items)
+				ref = valid_items.get(key, frappe._dict())
+				validate_quantity(doc, key, d, ref, valid_items, already_returned_items)
 
 				if (
 					ref.rate
@@ -162,12 +173,12 @@ def validate_returned_items(doc):
 		frappe.throw(_("Atleast one item should be entered with negative quantity in return document"))
 
 
-def validate_quantity(doc, args, ref, valid_items, already_returned_items):
+def validate_quantity(doc, key, args, ref, valid_items, already_returned_items):
 	fields = ["stock_qty"]
 	if doc.doctype in ["Purchase Receipt", "Purchase Invoice", "Subcontracting Receipt"]:
 		fields.extend(["received_qty", "rejected_qty"])
 
-	already_returned_data = already_returned_items.get(args.item_code) or {}
+	already_returned_data = already_returned_items.get(key) or {}
 
 	company_currency = erpnext.get_company_currency(doc.company)
 	stock_qty_precision = get_field_precision(
@@ -206,8 +217,12 @@ def validate_quantity(doc, args, ref, valid_items, already_returned_items):
 def get_ref_item_dict(valid_items, ref_item_row):
 	from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
+	key = ref_item_row.item_code
+	if ref_item_row.get("name"):
+		key = (ref_item_row.item_code, ref_item_row.name)
+
 	valid_items.setdefault(
-		ref_item_row.item_code,
+		key,
 		frappe._dict(
 			{
 				"qty": 0,
@@ -221,7 +236,7 @@ def get_ref_item_dict(valid_items, ref_item_row):
 			}
 		),
 	)
-	item_dict = valid_items[ref_item_row.item_code]
+	item_dict = valid_items[key]
 	item_dict["qty"] += ref_item_row.qty
 	item_dict["stock_qty"] += ref_item_row.get("stock_qty", 0)
 	if ref_item_row.get("rate", 0) > item_dict["rate"]:
@@ -246,15 +261,20 @@ def get_already_returned_items(doc):
 		column += """, sum(abs(child.rejected_qty) * child.conversion_factor) as rejected_qty,
 			sum(abs(child.received_qty) * child.conversion_factor) as received_qty"""
 
+	field = (
+		frappe.scrub(doc.doctype) + "_item"
+		if doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Sales Invoice"]
+		else "dn_detail"
+	)
 	data = frappe.db.sql(
 		f"""
-		select {column}
+		select {column}, {field}
 		from
 			`tab{doc.doctype} Item` child, `tab{doc.doctype}` par
 		where
 			child.parent = par.name and par.docstatus = 1
 			and par.is_return = 1 and par.return_against = %s
-		group by item_code
+		group by item_code, {field}
 	""",
 		doc.return_against,
 		as_dict=1,
@@ -264,7 +284,7 @@ def get_already_returned_items(doc):
 
 	for d in data:
 		items.setdefault(
-			d.item_code,
+			(d.item_code, d.get(field)),
 			frappe._dict(
 				{
 					"qty": d.get("qty"),

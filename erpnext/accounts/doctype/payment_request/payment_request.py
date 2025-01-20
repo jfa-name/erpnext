@@ -238,12 +238,12 @@ class PaymentRequest(Document):
 		return controller.get_payment_url(
 			**{
 				"amount": flt(self.grand_total, self.precision("grand_total")),
-				"title": data.company.encode("utf-8"),
-				"description": self.subject.encode("utf-8"),
+				"title": data.company,
+				"description": self.subject,
 				"reference_doctype": "Payment Request",
 				"reference_docname": self.name,
 				"payer_email": self.email_to or frappe.session.user,
-				"payer_name": frappe.safe_encode(data.customer_name),
+				"payer_name": data.customer_name,
 				"order_id": self.name,
 				"currency": self.currency,
 			}
@@ -538,7 +538,7 @@ def make_payment_request(**args):
 			)
 
 		party_type = args.get("party_type") or "Customer"
-		party_account_currency = ref_doc.party_account_currency
+		party_account_currency = ref_doc.get("party_account_currency")
 
 		if not party_account_currency:
 			party_account = get_party_account(party_type, ref_doc.get(party_type.lower()), ref_doc.company)
@@ -838,21 +838,17 @@ def validate_payment(doc, method=None):
 @frappe.whitelist()
 def get_open_payment_requests_query(doctype, txt, searchfield, start, page_len, filters):
 	# permission checks in `get_list()`
-	reference_doctype = filters.get("reference_doctype")
-	reference_name = filters.get("reference_doctype")
+	filters = frappe._dict(filters)
 
-	if not reference_doctype or not reference_name:
+	if not filters.reference_doctype or not filters.reference_name:
 		return []
+
+	if txt:
+		filters.name = ["like", f"%{txt}%"]
 
 	open_payment_requests = frappe.get_list(
 		"Payment Request",
-		filters={
-			"reference_doctype": filters["reference_doctype"],
-			"reference_name": filters["reference_name"],
-			"status": ["!=", "Paid"],
-			"outstanding_amount": ["!=", 0],  # for compatibility with old data
-			"docstatus": 1,
-		},
+		filters=filters,
 		fields=["name", "grand_total", "outstanding_amount"],
 		order_by="transaction_date ASC,creation ASC",
 	)
