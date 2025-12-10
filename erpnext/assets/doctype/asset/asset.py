@@ -1571,11 +1571,9 @@ def get_straight_line_or_manual_depr_amount(asset, row, schedule_idx, number_of_
 
 			return daily_depr_amount * (date_diff(to_date, from_date) + 1)
 		else:
-			return (
-				flt(asset.gross_purchase_amount)
-				- flt(asset.opening_accumulated_depreciation)
-				- flt(row.expected_value_after_useful_life)
-			) / flt(row.total_number_of_depreciations - asset.number_of_depreciations_booked)
+			return (flt(asset.gross_purchase_amount) - flt(row.expected_value_after_useful_life)) / flt(
+				row.total_number_of_depreciations
+			)
 
 
 def get_shift_depr_amount(asset, row, schedule_idx):
