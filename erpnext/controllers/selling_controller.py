@@ -728,12 +728,6 @@ class SellingController(StockController):
 
 
 def set_default_income_account_for_item(obj):
-<<<<<<< HEAD
-	for d in obj.get("items"):
-		if d.item_code:
-			if getattr(d, "income_account", None):
-				set_item_default(d.item_code, obj.company, "income_account", d.income_account)
-=======
 	"""Set income account as default for items in the transaction.
 
 	Updates the item default income account for each item in the transaction
@@ -747,42 +741,3 @@ def set_default_income_account_for_item(obj):
 		income_account = getattr(d, "income_account", None)
 		if d.item_code and income_account and income_account != company_default:
 			set_item_default(d.item_code, obj.company, "income_account", income_account)
-
-
-def get_serial_and_batch_bundle(child, parent, delivery_note_child=None):
-	from erpnext.stock.serial_batch_bundle import SerialBatchCreation
-
-	if parent.get("is_return") and parent.get("packed_items"):
-		return
-
-	if child.get("use_serial_batch_fields"):
-		return
-
-	if not frappe.get_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward"):
-		return
-
-	item_details = frappe.db.get_value("Item", child.item_code, ["has_serial_no", "has_batch_no"], as_dict=1)
-
-	if not item_details.has_serial_no and not item_details.has_batch_no:
-		return
-
-	sn_doc = SerialBatchCreation(
-		{
-			"item_code": child.item_code,
-			"warehouse": child.warehouse,
-			"voucher_type": parent.doctype,
-			"voucher_no": parent.name if parent.docstatus < 2 else None,
-			"voucher_detail_no": delivery_note_child.name if delivery_note_child else child.name,
-			"posting_datetime": get_combine_datetime(parent.posting_date, parent.posting_time),
-			"qty": child.qty,
-			"type_of_transaction": "Outward" if child.qty > 0 and parent.docstatus < 2 else "Inward",
-			"company": parent.company,
-			"do_not_submit": "True",
-		}
-	)
-
-	doc = sn_doc.make_serial_and_batch_bundle()
-	child.db_set("serial_and_batch_bundle", doc.name)
-
-	return doc.name
->>>>>>> b6cb9d4799 (fix: don't duplicate default income account to Item (#50413))
