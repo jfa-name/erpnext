@@ -42,13 +42,8 @@ class calculate_taxes_and_totals:
 		items = list(filter(lambda item: not item.get("is_alternative"), self.doc.get("items")))
 		return items
 
-<<<<<<< HEAD
-	def calculate(self):
-		if not len(self._items):
-=======
 	def calculate(self, ignore_tax_template_validation=False):
-		if not len(self.doc.items):
->>>>>>> f00aeec9b4 (Merge pull request #51787 from ljain112/fix-taxes-disc)
+		if not len(self._items):
 			return
 
 		self.discount_amount_applied = False
